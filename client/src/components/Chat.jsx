@@ -28,7 +28,7 @@ const Chat = ({ username }) => {
   useEffect(() => {
     connect(username, currentRoom);
     return () => disconnect();
-  }, [username, currentRoom, connect, disconnect]);
+  }, [username, currentRoom]);
 
   // Scroll to bottom when new messages
   useEffect(() => {

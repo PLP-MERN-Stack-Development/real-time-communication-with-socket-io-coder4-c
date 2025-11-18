@@ -68,6 +68,20 @@ io.on('connection', (socket) => {
     socket.join(room);
     rooms[room].users[socket.id] = { username, id: socket.id };
 
+    // Add join message
+    const joinMessage = {
+      id: Date.now(),
+      system: true,
+      message: `${username} joined the chat`,
+      timestamp: new Date().toISOString(),
+    };
+    rooms[room].messages.push(joinMessage);
+
+    // Limit stored messages
+    if (rooms[room].messages.length > 100) {
+      rooms[room].messages.shift();
+    }
+
     // Send room data to user
     socket.emit('room_joined', {
       room,
@@ -78,6 +92,7 @@ io.on('connection', (socket) => {
     // Notify others in room
     socket.to(room).emit('user_list', Object.values(rooms[room].users));
     socket.to(room).emit('user_joined', { username, id: socket.id });
+    io.to(room).emit('receive_message', joinMessage);
     console.log(`${username} joined room: ${room}`);
   });
 
@@ -154,7 +169,23 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     if (rooms[currentRoom] && rooms[currentRoom].users[socket.id]) {
       const { username } = rooms[currentRoom].users[socket.id];
+
+      // Add leave message
+      const leaveMessage = {
+        id: Date.now(),
+        system: true,
+        message: `${username} left the chat`,
+        timestamp: new Date().toISOString(),
+      };
+      rooms[currentRoom].messages.push(leaveMessage);
+
+      // Limit stored messages
+      if (rooms[currentRoom].messages.length > 100) {
+        rooms[currentRoom].messages.shift();
+      }
+
       socket.to(currentRoom).emit('user_left', { username, id: socket.id });
+      io.to(currentRoom).emit('receive_message', leaveMessage);
       console.log(`${username} left room: ${currentRoom}`);
     }
 

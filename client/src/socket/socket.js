@@ -83,29 +83,11 @@ export const useSocket = () => {
     };
 
     const onUserJoined = (user) => {
-      // System message removed to prevent duplicates on reconnect
-      // setMessages((prev) => [
-      //   ...prev,
-      //   {
-      //     id: Date.now(),
-      //     system: true,
-      //     message: `${user.username} joined the chat`,
-      //     timestamp: new Date().toISOString(),
-      //   },
-      // ]);
+      // System messages are now handled on the server
     };
 
     const onUserLeft = (user) => {
-      // System message removed to prevent duplicates on reconnect
-      // setMessages((prev) => [
-      //   ...prev,
-      //   {
-      //     id: Date.now(),
-      //     system: true,
-      //     message: `${user.username} left the chat`,
-      //     timestamp: new Date().toISOString(),
-      //   },
-      // ]);
+      // System messages are now handled on the server
     };
 
     // Typing events
