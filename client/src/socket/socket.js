@@ -23,10 +23,10 @@ export const useSocket = () => {
   const [typingUsers, setTypingUsers] = useState([]);
 
   // Connect to socket server
-  const connect = (username) => {
+  const connect = (username, room = 'general') => {
     socket.connect();
     if (username) {
-      socket.emit('user_join', username);
+      socket.emit('user_join', { username, room });
     }
   };
 
@@ -48,6 +48,11 @@ export const useSocket = () => {
   // Set typing status
   const setTyping = (isTyping) => {
     socket.emit('typing', isTyping);
+  };
+
+  // React to message
+  const reactMessage = (messageId, reaction) => {
+    socket.emit('react_message', { messageId, reaction });
   };
 
   // Socket event listeners
@@ -78,34 +83,45 @@ export const useSocket = () => {
     };
 
     const onUserJoined = (user) => {
-      // You could add a system message here
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          system: true,
-          message: `${user.username} joined the chat`,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+      // System message removed to prevent duplicates on reconnect
+      // setMessages((prev) => [
+      //   ...prev,
+      //   {
+      //     id: Date.now(),
+      //     system: true,
+      //     message: `${user.username} joined the chat`,
+      //     timestamp: new Date().toISOString(),
+      //   },
+      // ]);
     };
 
     const onUserLeft = (user) => {
-      // You could add a system message here
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          system: true,
-          message: `${user.username} left the chat`,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+      // System message removed to prevent duplicates on reconnect
+      // setMessages((prev) => [
+      //   ...prev,
+      //   {
+      //     id: Date.now(),
+      //     system: true,
+      //     message: `${user.username} left the chat`,
+      //     timestamp: new Date().toISOString(),
+      //   },
+      // ]);
     };
 
     // Typing events
     const onTypingUsers = (users) => {
       setTypingUsers(users);
+    };
+
+    // Message updated
+    const onMessageUpdated = (updatedMessage) => {
+      setMessages((prev) => prev.map(m => m.id === updatedMessage.id ? updatedMessage : m));
+    };
+
+    // Room joined
+    const onRoomJoined = (roomData) => {
+      setMessages(roomData.messages);
+      setUsers(roomData.users);
     };
 
     // Register event listeners
@@ -117,6 +133,8 @@ export const useSocket = () => {
     socket.on('user_joined', onUserJoined);
     socket.on('user_left', onUserLeft);
     socket.on('typing_users', onTypingUsers);
+    socket.on('message_updated', onMessageUpdated);
+    socket.on('room_joined', onRoomJoined);
 
     // Clean up event listeners
     return () => {
@@ -128,6 +146,7 @@ export const useSocket = () => {
       socket.off('user_joined', onUserJoined);
       socket.off('user_left', onUserLeft);
       socket.off('typing_users', onTypingUsers);
+      socket.off('message_updated', onMessageUpdated);
     };
   }, []);
 
@@ -143,6 +162,7 @@ export const useSocket = () => {
     sendMessage,
     sendPrivateMessage,
     setTyping,
+    reactMessage,
   };
 };
 
