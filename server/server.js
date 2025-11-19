@@ -66,16 +66,19 @@ io.on('connection', (socket) => {
 
     // Join the room
     socket.join(room);
+    const wasAlreadyInRoom = !!rooms[room].users[socket.id];
     rooms[room].users[socket.id] = { username, id: socket.id };
 
-    // Add join message
-    const joinMessage = {
-      id: Date.now(),
-      system: true,
-      message: `${username} joined the chat`,
-      timestamp: new Date().toISOString(),
-    };
-    rooms[room].messages.push(joinMessage);
+    // Add join message only if user wasn't already in the room
+    if (!wasAlreadyInRoom) {
+      const joinMessage = {
+        id: Date.now(),
+        system: true,
+        message: `${username} joined the chat`,
+        timestamp: new Date().toISOString(),
+      };
+      rooms[room].messages.push(joinMessage);
+    }
 
     // Limit stored messages
     if (rooms[room].messages.length > 100) {
@@ -91,9 +94,11 @@ io.on('connection', (socket) => {
 
     // Notify others in room
     socket.to(room).emit('user_list', Object.values(rooms[room].users));
-    socket.to(room).emit('user_joined', { username, id: socket.id });
-    io.to(room).emit('receive_message', joinMessage);
-    console.log(`${username} joined room: ${room}`);
+    if (!wasAlreadyInRoom) {
+      socket.to(room).emit('user_joined', { username, id: socket.id });
+      io.to(room).emit('receive_message', joinMessage);
+      console.log(`${username} joined room: ${room}`);
+    }
   });
 
   // Handle chat messages
@@ -185,7 +190,7 @@ io.on('connection', (socket) => {
       }
 
       socket.to(currentRoom).emit('user_left', { username, id: socket.id });
-      io.to(currentRoom).emit('receive_message', leaveMessage);
+      socket.to(currentRoom).emit('receive_message', leaveMessage);
       console.log(`${username} left room: ${currentRoom}`);
     }
 
