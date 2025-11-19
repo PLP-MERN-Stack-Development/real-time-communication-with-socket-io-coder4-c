@@ -24,10 +24,14 @@ const Chat = ({ username }) => {
   const [availableRooms, setAvailableRooms] = useState(['general']);
   const [newRoomName, setNewRoomName] = useState('');
   const messagesEndRef = useRef(null);
+  const previousRoomRef = useRef('general');
 
   useEffect(() => {
+    if (previousRoomRef.current !== currentRoom) {
+      disconnect();
+    }
     connect(username, currentRoom);
-    return () => disconnect();
+    previousRoomRef.current = currentRoom;
   }, [username, currentRoom]);
 
   // Scroll to bottom when new messages
@@ -42,15 +46,22 @@ const Chat = ({ username }) => {
     }
   }, []);
 
-  // Show notifications for new messages
+  // Show notifications for new messages and joins
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.sender !== username && !lastMessage.system && document.hidden) {
+    if (lastMessage && lastMessage.sender !== username && document.hidden) {
       if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(`New message from ${lastMessage.sender}`, {
-          body: lastMessage.message,
-          icon: '/vite.svg',
-        });
+        if (!lastMessage.system) {
+          new Notification(`New message from ${lastMessage.sender}`, {
+            body: lastMessage.message,
+            icon: '/vite.svg',
+          });
+        } else if (lastMessage.message.includes('joined')) {
+          new Notification('User joined', {
+            body: lastMessage.message,
+            icon: '/vite.svg',
+          });
+        }
       }
     }
   }, [messages, username]);
@@ -70,9 +81,6 @@ const Chat = ({ username }) => {
   const handleRoomSwitch = (room) => {
     if (room !== currentRoom) {
       setCurrentRoom(room);
-      // Reconnect with new room
-      disconnect();
-      connect(username, room);
     }
   };
 
