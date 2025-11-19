@@ -1,7 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const Login = ({ onLogin }) => {
   const [username, setUsername] = useState('');
+
+  useEffect(() => {
+    // Auto-generate a username
+    const generatedUsername = `User${Math.floor(Math.random() * 10000)}`;
+    setUsername(generatedUsername);
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
